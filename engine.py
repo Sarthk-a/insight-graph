@@ -8,18 +8,18 @@ from langchain_tavily import TavilySearch
 load_dotenv()
 
 # Initialize AI and Tools
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
 search = TavilySearch(max_results=2)
-retriever = get_retriever("chart.pdf") 
+# retriever = get_retriever("chart.pdf") 
 
-def run_researcher(query):
+def run_researcher(query, retriever):
     print(f"\n--- Analyzing Query: '{query}' ---")
     
-    # Step 1: Look in the PDF
+    #  Look in the PDF
     docs = retriever.invoke(query)
     context = "\n".join([d.page_content for d in docs])
     
-    # Step 2: The Agentic Decision
+    # The Agentic Decision
     check = llm.invoke(f"Is this text enough to answer '{query}'? Reply YES/NO: {context}")
     
     if "NO" in check.content.upper():
@@ -29,7 +29,7 @@ def run_researcher(query):
     else:
         print("--- Answer found in PDF. Generating response... ---")
         
-    # Step 3: Final Answer
+    # Final Answer
     return llm.invoke(f"Context: {context}\nQuestion: {query}").content
 
 if __name__ == "__main__":

@@ -1,18 +1,19 @@
 import os
 import base64
 from io import BytesIO
-from dotenv import load_dotenv # <-- Add this
+from dotenv import load_dotenv
 from pdf2image import convert_from_path
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
-# Load the keys BEFORE starting the AI!
-load_dotenv() # <-- Add this
+# Load API keys
+load_dotenv()
 
-# We need the Brain to "see" during the database creation
-vision_llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+# The 2026 Free-Tier Champion (1,000 requests/day)
+vision_llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
+
 def analyze_image(image):
     """Takes a single page image, asks Gemini for chart data."""
     buffered = BytesIO()
@@ -30,26 +31,22 @@ def analyze_image(image):
     return response.content
 
 def get_retriever(pdf_path):
-    print("\n--- 1. Reading PDF Text ---")
-    loader = PyPDFLoader(pdf_path)
-    pages = loader.load() # Load pages as LangChain Documents
+    """Accepts a SINGLE file path, extracts text/vision, builds one unified database."""
+    print(f"\n--- 1. Reading PDF: {pdf_path} ---")
     
-    print("--- 2. Slicing PDF for Vision Analysis ---")
-    # For this test, we will only process the first 3 pages to save time/API limits
+    loader = PyPDFLoader(pdf_path)
+    pages = loader.load() 
+    
+    # Slice the file for vision (first 3 pages)
     images = convert_from_path(pdf_path, first_page=1, last_page=3)
     
-    print("--- 3. Merging Vision Data into Text Data ---")
     for i, image in enumerate(images):
-        print(f"   Analyzing Page {i+1}...")
         vision_text = analyze_image(image)
-        
         if "NONE" not in vision_text.upper():
-            print(f"   -> Found visual data on Page {i+1}! Injecting into memory.")
-            # Glue the vision description to the bottom of the page's text
             pages[i].page_content += f"\n\n[VISUAL DATA ON THIS PAGE]:\n{vision_text}"
             
-    print("--- 4. Building Vector Database ---")
+    print("--- 2. Building Master Vector Database ---")
     embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     vectorstore = Chroma.from_documents(pages, embeddings)
     
-    return vectorstore.as_retriever(search_kwargs={"k": 2})
+    return vectorstore.as_retriever(search_kwargs={"k": 3})
