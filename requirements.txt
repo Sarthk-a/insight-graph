@@ -3,9 +3,9 @@ langchain
 langchain-community
 langchain-google-genai
 pdf2image
-chromadb==0.4.24
+chromadb==0.5.3
 python-dotenv
 pypdf
 tavily-python
 langchain-tavily
-protobuf==4.25.3
+protobuf==5.26.1
