@@ -1,0 +1,13 @@
+[theme]
+base="dark"
+# The exact hex code for that deep, sleek dark gray
+backgroundColor="#18181b" 
+secondaryBackgroundColor="#27272a"
+# A sleek, muted accent color instead of bright red/blue
+primaryColor="#a1a1aa" 
+textColor="#fafafa"
+font="sans serif"
+
+[client]
+# This hides the annoying "Deploy" button and hamburger menu at the top
+toolbarMode = "minimal"
